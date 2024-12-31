@@ -7,7 +7,7 @@ export const generateCSRF = async () => {
       'http://127.0.0.1:5001/marvelai-c7b53/us-central1/generateCSRF';
     const response = await axios.get(csrfURL, {
       withCredentials: true, // Ensure cookies are included
-    }); // Ensure cookies are included
+    });
     return response.data.csrfToken;
   } catch (error) {
     console.error(
@@ -32,7 +32,6 @@ export const sessionLogin = async (idToken, csrfToken) => {
         withCredentials: true, // Ensure cookies are included
       }
     );
-    console.log(response);
     return response.data;
   } catch (error) {
     console.error(
@@ -48,10 +47,7 @@ export const setCookies = async (idToken) => {
   try {
     const csrfToken = await generateCSRF(); // Generate CSRF token if not present
     // Step 2: Perform session login
-    const loginResponse = await sessionLogin(idToken, csrfToken);
-    console.log(loginResponse);
-    console.log('Session login successful:', loginResponse);
-    return loginResponse;
+    await sessionLogin(idToken, csrfToken);
   } catch (error) {
     console.error(
       'Error setting cookies:',
@@ -68,7 +64,6 @@ export const clearCookies = async () => {
     const response = await axios.get(url, {
       withCredentials: true,
     });
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error(

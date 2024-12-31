@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react';
 
 import { Grid, Link, useTheme } from '@mui/material';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/router';
 import { FormContainer } from 'react-hook-form-mui';
 import { useDispatch } from 'react-redux';

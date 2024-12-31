@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const { https } = require('firebase-functions/v1');
+const { https, logger } = require('firebase-functions/v1');
 const crypto = require('crypto');
 const { corsMiddleware } = require('../middlewares/corsMiddleware');
 const cookieParser = require('cookie-parser');
@@ -15,8 +15,10 @@ const cookieParser = require('cookie-parser');
 exports.generateCSRF = https.onRequest((req, res) => {
   corsMiddleware(req, res, async () => {
     try {
+      logger.log('generateCSRF called');
       // Check the HTTP method
       if (req.method !== 'GET') {
+        logger.log('Method Not Allowed');
         return res.status(405).json({ error: 'Method Not Allowed' });
       }
 
@@ -29,6 +31,7 @@ exports.generateCSRF = https.onRequest((req, res) => {
       // Combine random data, timestamp, and the secret key
       const secretKey = process.env.CSRF_SECRET_KEY;
       if (!secretKey) {
+        logger.log('Server configuration error: CSRF_SECRET_KEY not set');
         return res.status(500).json({ error: 'Server configuration error' });
       }
 
@@ -52,10 +55,11 @@ exports.generateCSRF = https.onRequest((req, res) => {
         maxAge: 60 * 60 * 24 * 5 * 1000, // 5 days
       };
       res.cookie('__session', hashedToken, cookieOptions);
+      logger.log('CSRF token generated and set as cookie');
       // Respond with the CSRF token (optional, for debugging purposes)
       res.status(200).json({ csrfToken: hashedToken });
     } catch (error) {
-      console.error('Error generating CSRF token:', error);
+      logger.error('Error generating CSRF token:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
@@ -76,13 +80,11 @@ exports.sessionLogin = https.onRequest((req, res) => {
         const idToken = req.body.idToken;
         const csrfToken = req.body.csrfToken;
 
-        console.log(`idToken: ${idToken}`);
-        console.log(`csrfToken: ${csrfToken}`);
-        console.log('Parsed Cookies: ', req.cookies);
-
         // Guard against CSRF attacks
         if (csrfToken !== req.cookies.__session) {
-          console.log(`${csrfToken} !== ${req.cookies.__session}`);
+          logger.log(
+            `CSRF token mismatch: ${csrfToken} !== ${req.cookies.__session}`
+          );
           return res.status(401).send('UNAUTHORIZED REQUEST!');
         }
 
@@ -101,13 +103,14 @@ exports.sessionLogin = https.onRequest((req, res) => {
           };
           // Set session cookie
           res.cookie('session', sessionCookie, options);
+          logger.log('Session cookie created and set');
           res.status(200).send({ status: 'success' });
         } catch (error) {
-          console.error('Error creating session cookie:', error);
+          logger.error('Error creating session cookie:', error);
           res.status(401).send('UNAUTHORIZED REQUEST!');
         }
       } catch (error) {
-        console.error('Error in sessionLogin:', error);
+        logger.error('Error in sessionLogin:', error);
         res.status(500).send('Internal Server Error');
       }
     });
@@ -123,9 +126,10 @@ exports.clearCookies = https.onRequest((req, res) => {
         httpOnly: true, // Match HttpOnly setting
         sameSite: 'None', // Match SameSite attribute
       });
+      logger.log('Session cookie cleared');
       res.redirect('/signin');
     } catch (error) {
-      console.error('Error clearing cookies:', error);
+      logger.error('Error clearing cookies:', error);
       res.status(500).send('Internal Server Error');
     }
   });
