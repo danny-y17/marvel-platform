@@ -23,7 +23,6 @@ const convertToUnixTimestamp = (date) => {
     // Invalid or unsupported date value
     unixTimestamp = null;
   }
-
   return unixTimestamp;
 };
 

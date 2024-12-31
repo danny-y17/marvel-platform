@@ -15,6 +15,7 @@ import ROUTES from '@/libs/constants/routes';
 
 import { auth } from '@/libs/redux/store';
 import { chatRegex, discoveryRegex, homeRegex } from '@/libs/regex/routes';
+import { clearCookies } from '@/libs/services/cookies/cookieFunctions';
 
 // TODO: Once Discovery Feature is ready, uncomment Discovery Page from below array.
 const PAGES = [
@@ -58,6 +59,7 @@ const NavBar = () => {
    * @returns {void}
    */
   const handleSignOutUser = () => {
+    clearCookies();
     signOut(auth);
   };
 

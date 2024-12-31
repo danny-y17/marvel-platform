@@ -40,6 +40,7 @@ const sharedStyles = {
       desktopMedium: 6,
       laptop: 4,
     },
+    mt: -5,
   },
   backButtonProps: {
     sx: {

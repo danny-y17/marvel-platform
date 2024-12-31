@@ -18,6 +18,10 @@ const App = ({ Component, pageProps }) => {
 
   return (
     <ThemeProvider theme={theme}>
+      <script
+        src="https://www.google.com/recaptcha/api.js?render=6LeZKKAqAAAAADwZ_IabXVbkbO5qxh7R8AzMVvRd"
+        async
+      />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <GlobalProvider>
           <GoogleAnalytics

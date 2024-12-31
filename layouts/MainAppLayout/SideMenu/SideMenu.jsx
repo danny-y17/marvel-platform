@@ -14,6 +14,7 @@ import styles from './styles';
 import ROUTES from '@/libs/constants/routes';
 
 import { auth } from '@/libs/redux/store';
+import { clearCookies } from '@/libs/services/cookies/cookieFunctions';
 
 /**
  * Renders the Side Menu.
@@ -24,6 +25,7 @@ const SideMenu = ({ user }) => {
   const router = useRouter();
 
   const handleSignOutUser = () => {
+    clearCookies();
     signOut(auth);
   };
 

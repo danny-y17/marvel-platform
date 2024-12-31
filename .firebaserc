@@ -1,12 +1,12 @@
 {
   "projects": {
-     "default": "kai-ai-f63c8"
+     "default": "marvelai-c7b53"
   },
   "targets": {
-    "kai-ai-f63c8": {
+    "marvelai-c7b53": {
       "hosting": {
         "next": [
-          "kai-ai-f63c8"
+          "marvelai-c7b53"
         ]
       }
     }

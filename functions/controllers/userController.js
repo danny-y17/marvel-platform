@@ -16,7 +16,7 @@ const { https } = require('firebase-functions/v1');
  * @returns {string} return.message - A message describing the result of the operation.
  * @throws {https.HttpsError} If any of the required fields (email, fullName, uid) are missing in the data object.
  */
-exports.signUpUser = https.onCall(async (data, context) => {
+exports.signUpUser = https.onCall(async (data, _context) => {
   const { email, fullName, uid } = data;
 
   if (!email || !fullName || !uid) {

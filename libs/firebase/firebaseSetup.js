@@ -19,6 +19,7 @@ const EMULATOR_PORTS = {
   functions: 5001,
 };
 
+// Conditionally connect to Firebase emulators if running locally
 async function conditionallyConnectEmulators() {
   if (
     typeof window !== 'undefined' &&
@@ -55,6 +56,7 @@ async function conditionallyConnectEmulators() {
   }
 }
 
+// Call the emulator connection function
 conditionallyConnectEmulators();
 
 export { auth, firestore, functions };

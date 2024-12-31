@@ -248,6 +248,7 @@ const globalTheme = createTheme({
         blueDark: 'linear-gradient(286.17deg, #024ce5 0%, #0e5dfc 100%)',
         blue2: 'linear-gradient(286deg, #00F5A0 0%, #00D9F5 100%)',
         darkBlue: 'linear-gradient(90deg, #000428 0%, #004E92 100%)',
+        darkgray1: '#36454f',
         purple: 'linear-gradient(286.17deg, #6949FF 0%, #876DFF 100%)',
         purple2: 'linear-gradient(286.17deg, #6335F8 0%, #E71DE7 100%)',
         purple2Reverse: 'linear-gradient(286.17deg, #E71DE7 0%, #6335F8 100%)',

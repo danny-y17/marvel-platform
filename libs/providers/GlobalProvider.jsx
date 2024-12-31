@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 
 import { onAuthStateChanged } from 'firebase/auth';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 
 import SnackBar from '@/components/SnackBar';
 
@@ -41,7 +41,6 @@ const AuthProvider = (props) => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return null;
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // Get auth user claims
