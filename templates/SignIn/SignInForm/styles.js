@@ -66,7 +66,7 @@ const styles = {
   },
   googleButtonProps: {
     type: 'submit',
-    color: 'darkgray1',
+    color: 'purple4',
     inverted: true,
     extraProps: {
       padding: '2px',

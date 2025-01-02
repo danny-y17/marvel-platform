@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 
 import { Grid, Link, useTheme } from '@mui/material';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { FormContainer } from 'react-hook-form-mui';
 import { useDispatch } from 'react-redux';
@@ -123,20 +124,26 @@ const SignInForm = ({ handleSwitch }) => {
     try {
       setSignInLoading(true);
       const userCred = await googleSignIn();
+      if (!userCred || !userCred.user) {
+        throw new Error('Google sign-in failed. No user credentials returned.');
+      }
       dispatch(setLoading(true));
       const userData = await dispatch(
         fetchUserData({ firestore, id: userCred.user.uid })
       ).unwrap();
       dispatch(setLoading(false));
       router.replace(userData?.needsBoarding ? ROUTES.ONBOARDING : ROUTES.HOME);
-    } catch ({ code }) {
-      setError({ password: { message: AUTH_ERROR_MESSAGES[code] } });
+    } catch (err) {
+      const errorCode = err.code || 'unknown';
+      setError({
+        password: { message: AUTH_ERROR_MESSAGES[errorCode] || err.message },
+      });
       handleOpenSnackBar(
         ALERT_COLORS.ERROR,
         'Google sign-in failed. Please try again.'
       );
       // If using Sentry for production error logging:
-      // if (process.env.NODE_ENV === 'production') Sentry.captureException(code);
+      // if (process.env.NODE_ENV === 'production') Sentry.captureException(err);
     } finally {
       setSignInLoading(false);
     }
@@ -206,6 +213,15 @@ const SignInForm = ({ handleSwitch }) => {
       text={signInLoading ? 'Signing in...' : 'Sign In Via Google'}
       textColor={theme.palette.Common.White['100p']}
       loading={signInLoading}
+      startIcon={
+        <Image
+          src="/google-icon-128px.png"
+          alt="Google Icon"
+          width={25}
+          height={25}
+          style={{ marginRight: 10 }}
+        />
+      }
       {...styles.googleButtonProps}
     />
   );

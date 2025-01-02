@@ -1,6 +1,8 @@
 import { useContext, useState } from 'react';
 
 import { Grid, useTheme } from '@mui/material';
+import Image from 'next/image';
+
 import { useRouter } from 'next/router';
 import { FormContainer } from 'react-hook-form-mui';
 import { useDispatch } from 'react-redux';
@@ -146,7 +148,7 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
     setGoogleLoading(true);
     try {
       const userCred = await googleSignIn();
-      dispatch(setLoading(true)); // <-- If you're using your Redux-based setLoading
+      dispatch(setLoading(true));
       const userData = await dispatch(
         fetchUserData({ firestore, id: userCred.user.uid })
       ).unwrap();
@@ -154,17 +156,19 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
 
       router.replace(userData?.needsBoarding ? ROUTES.ONBOARDING : ROUTES.HOME);
     } catch (err) {
-      // If err is shaped { code }, we can show a more specific message
-      const { code } = err || {};
+      const { code, message } = err || {};
       setError((prev) => ({
         ...prev,
         password: {
-          message: AUTH_ERROR_MESSAGES[code] || 'Google sign-in failed',
+          message:
+            AUTH_ERROR_MESSAGES[code] || message || 'Google sign-in failed',
         },
       }));
       handleOpenSnackBar(
         ALERT_COLORS.ERROR,
-        'Google sign-in failed. Please try again.'
+        AUTH_ERROR_MESSAGES[code] ||
+          message ||
+          'Google sign-in failed. Please try again.'
       );
     } finally {
       setGoogleLoading(false);
@@ -277,8 +281,23 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
       text={googleLoading ? 'Signing up...' : 'Sign Up Via Google'}
       textColor={theme.palette.Common.White['100p']}
       loading={googleLoading}
+      startIcon={
+        <Image
+          src="/google-icon-128px.png"
+          alt="Google Icon"
+          width={25}
+          height={25}
+          style={{ marginRight: 10 }}
+        />
+      }
       {...styles.googleButtonProps}
     />
+  );
+
+  const renderOrSeparator = () => (
+    <Grid {...styles.OrSeparatorProps}>
+      <span style={styles.OrSeparatorProps.text}>Or</span>
+    </Grid>
   );
 
   return (
@@ -291,17 +310,22 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
         defaultValues={DEFAULT_FORM_VALUES}
         onSuccess={handleFormSuccess}
       >
-        <Grid {...sharedStyles.formGridProps}>
+        <Grid
+          container
+          justifyContent="center"
+          marginTop={2}
+          {...sharedStyles.formGridProps}
+        >
           {renderEmailInput()}
           {renderFullNameInput()}
           {renderPasswordAndConfirmPasswordInputs()}
           {renderSubmitButton()}
         </Grid>
       </FormContainer>
-
       {/* 
         Google button is OUTSIDE the form container, so it never gets blocked by validations.
       */}
+      {renderOrSeparator()}
       <Grid container justifyContent="center" marginTop={2}>
         {renderGoogleSignInButton()}
       </Grid>
