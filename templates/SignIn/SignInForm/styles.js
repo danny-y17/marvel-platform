@@ -55,7 +55,7 @@ const styles = {
     extraProps: {
       padding: '2px',
       height: { laptop: '54px', desktopMedium: '60px' },
-      width: '70%',
+      width: '65%',
       mt: -1, // Increased margin-top to shift up more
     },
     extraButtonProps: {
@@ -71,7 +71,7 @@ const styles = {
     extraProps: {
       padding: '2px',
       height: { laptop: '54px', desktopMedium: '60px' },
-      width: '70%',
+      width: '65%',
       mt: -3, // Increased margin-top to shift up more
     },
     extraButtonProps: {
@@ -86,7 +86,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     sx: {
-      mt: -2, // Add some spacing between buttons and separator
+      mt: -5, // Add some spacing between buttons and separator
       mb: -2, // Add some spacing after separator
       '&::before, &::after': {
         content: '""',
