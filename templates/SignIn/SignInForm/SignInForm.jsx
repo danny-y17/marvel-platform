@@ -1,9 +1,10 @@
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 
 import { Grid, Link, useTheme } from '@mui/material';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { FormContainer } from 'react-hook-form-mui';
 import { useDispatch } from 'react-redux';
 
@@ -15,22 +16,19 @@ import styles from './styles';
 import sharedStyles from '@/styles/shared/sharedStyles';
 
 import { AUTH_ERROR_MESSAGES } from '@/libs/constants/auth';
-import ALERT_COLORS from '@/libs/constants/notification';
 import ROUTES from '@/libs/constants/routes';
 
-import useRecaptcha from '@/libs/hooks/useRecaptcha';
 import { AuthContext } from '@/libs/providers/GlobalProvider';
 import { setLoading } from '@/libs/redux/slices/authSlice';
 import { auth, firestore } from '@/libs/redux/store';
 import fetchUserData from '@/libs/redux/thunks/user';
 import AUTH_REGEX from '@/libs/regex/auth';
 import { setCookies } from '@/libs/services/cookies/cookieFunctions';
-import { handleRecaptchaVerification } from '@/libs/services/google/captchaVerify';
-import { googleSignIn } from '@/libs/services/google/googleAuth';
-import { sendPasswordReset } from '@/libs/services/user/manageUser';
-
-// Optional: If using Sentry for remote error logging
-// import * as Sentry from '@sentry/nextjs';
+import {
+  executeAndVerifyRecaptcha,
+  verifyRecaptchaToken,
+} from '@/libs/services/GoogleServices/captchaVerify';
+import { handleGoogleSignIn } from '@/libs/services/GoogleServices/googleAuth';
 
 const DEFAULT_FORM_VALUES = {
   email:
@@ -56,8 +54,12 @@ const SignInForm = ({ handleSwitch }) => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { handleOpenSnackBar } = useContext(AuthContext);
-  const { executeRecaptcha } = useRecaptcha();
 
+  // reCAPTCHA v2 Handling
+  const [showRecaptchaV2, setShowRecaptchaV2] = useState(false);
+  const recaptchaRef = useRef(null);
+  const CAPTCHA_THRESHOLD = 0.5;
+  // Step 1: Handle reCAPTCHA v3 first
   const handleEmailPasswordSignIn = async (data) => {
     const { email, password } = data;
     setError(DEFAULT_ERR_STATE);
@@ -78,21 +80,17 @@ const SignInForm = ({ handleSwitch }) => {
       return;
     }
 
-    setSignInLoading(true);
-
-    try {
-      const token = await executeRecaptcha('signin');
-      const score = await handleRecaptchaVerification(token);
-
-      if (score < 0.5) {
-        sendPasswordReset(auth, email);
-        handleOpenSnackBar(
-          ALERT_COLORS.INFO,
-          'Too many attempts, please reset your password'
-        );
+    // Step 2: Execute reCAPTCHA v3 first
+    const verified = await executeAndVerifyRecaptcha('signin');
+    if (!verified) {
+      if (verified.score < CAPTCHA_THRESHOLD) {
+        setShowRecaptchaV2(true);
         return;
       }
+    }
 
+    try {
+      // Step 3: Proceed with Firebase Authentication
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       const {
         user,
@@ -101,7 +99,6 @@ const SignInForm = ({ handleSwitch }) => {
 
       const handleCookies = await setCookies(idToken);
       if (!handleCookies) return;
-
       dispatch(setLoading(true));
       let userData;
       try {
@@ -120,32 +117,13 @@ const SignInForm = ({ handleSwitch }) => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setSignInLoading(true);
-      const userCred = await googleSignIn();
-      if (!userCred || !userCred.user) {
-        throw new Error('Google sign-in failed. No user credentials returned.');
-      }
-      dispatch(setLoading(true));
-      const userData = await dispatch(
-        fetchUserData({ firestore, id: userCred.user.uid })
-      ).unwrap();
-      dispatch(setLoading(false));
-      router.replace(userData?.needsBoarding ? ROUTES.ONBOARDING : ROUTES.HOME);
-    } catch (err) {
-      const errorCode = err.code || 'unknown';
-      setError({
-        password: { message: AUTH_ERROR_MESSAGES[errorCode] || err.message },
-      });
-      handleOpenSnackBar(
-        ALERT_COLORS.ERROR,
-        'Google sign-in failed. Please try again.'
-      );
-      // If using Sentry for production error logging:
-      // if (process.env.NODE_ENV === 'production') Sentry.captureException(err);
-    } finally {
-      setSignInLoading(false);
+  // Step 4: Handle reCAPTCHA v2 Checkbox Verification
+  const handleRecaptchaV2 = async (token) => {
+    const verified = await verifyRecaptchaToken(token, 'v2');
+    if (verified) {
+      setShowRecaptchaV2(false);
+    } else {
+      setShowRecaptchaV2(true);
     }
   };
 
@@ -185,12 +163,27 @@ const SignInForm = ({ handleSwitch }) => {
     </Grid>
   );
 
+  // Step 5: Render reCAPTCHA v2 Checkbox
+  const renderRecaptchaV2 = () =>
+    showRecaptchaV2 && (
+      <ReCAPTCHA
+        sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_V2_SITE_KEY}
+        size="normal" // Uses checkbox mode instead of invisible
+        ref={recaptchaRef}
+        onChange={handleRecaptchaV2}
+      />
+    );
+
   const handleFormSuccess = (data) => {
     if (loginMethod === 'google') {
-      // If user clicked Google sign-in
-      handleGoogleSignIn();
+      handleGoogleSignIn(
+        dispatch,
+        router,
+        handleOpenSnackBar,
+        setError,
+        setSignInLoading
+      );
     } else {
-      // Default to email/password sign-in
       handleEmailPasswordSignIn(data);
     }
   };
@@ -240,6 +233,7 @@ const SignInForm = ({ handleSwitch }) => {
       <Grid {...sharedStyles.formGridProps}>
         {renderEmailInput()}
         {renderPasswordInput()}
+        {renderRecaptchaV2()}
         {renderSubmitButton()}
         {renderOrSeparator()}
         {renderGoogleSignInButton()}

@@ -14,6 +14,7 @@ const AUTH_ERR_CODES = {
   WRONG_PASSWORD: 'auth/wrong-password',
   USER_NOT_FOUND: 'auth/user-not-found',
   INVALID_LOGIN_CREDENTIALS: 'auth/invalid-login-credentials',
+  POPUP_CLOSED_BY_USER: 'auth/popup-closed-by-user',
 };
 
 const AUTH_ERROR_MESSAGES = {
@@ -26,6 +27,7 @@ const AUTH_ERROR_MESSAGES = {
   [AUTH_ERR_CODES.USER_NOT_FOUND]: 'Email not found',
   [AUTH_ERR_CODES.WRONG_PASSWORD]: 'Wrong password',
   [AUTH_ERR_CODES.USER_DISABLED]: 'The user is currently disabled',
+  [AUTH_ERR_CODES.POPUP_CLOSED_BY_USER]: 'Google sign-in popup was closed',
   // For Sign-up
   [AUTH_ERR_CODES.EMAIL_ALREADY_IN_USE]: 'This email address is already in use',
 };

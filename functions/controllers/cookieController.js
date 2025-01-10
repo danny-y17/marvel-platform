@@ -48,13 +48,13 @@ exports.generateCSRF = https.onRequest((req, res) => {
         .digest('hex');
 
       // Set the CSRF token as an HTTP-only cookie
-      const cookieOptions = {
-        httpOnly: true,
-        secure: true, // Set to true in production (requires HTTPS)
-        sameSite: 'None', // Protect against CSRF attacks
-        maxAge: 60 * 60 * 24 * 5 * 1000, // 5 days
+      const options = {
+        httpOnly: true, // ✅ Prevent access from JavaScript (secure)
+        secure: true, // ❌ Remove for localhost
+        sameSite: 'None',
+        path: '/',
       };
-      res.cookie('__session', hashedToken, cookieOptions);
+      res.cookie('csrfToken', hashedToken, options);
       logger.log('CSRF token generated and set as cookie');
       // Respond with the CSRF token (optional, for debugging purposes)
       res.status(200).json({ csrfToken: hashedToken });
@@ -81,9 +81,10 @@ exports.sessionLogin = https.onRequest((req, res) => {
         const csrfToken = req.body.csrfToken;
 
         // Guard against CSRF attacks
-        if (csrfToken !== req.cookies.__session) {
+        console.log(req.cookies);
+        if (csrfToken !== req.cookies.csrfToken) {
           logger.log(
-            `CSRF token mismatch: ${csrfToken} !== ${req.cookies.__session}`
+            `CSRF token mismatch: ${csrfToken} !== ${req.cookies.csrfToken}`
           );
           return res.status(401).send('UNAUTHORIZED REQUEST!');
         }
@@ -96,14 +97,15 @@ exports.sessionLogin = https.onRequest((req, res) => {
             .auth()
             .createSessionCookie(idToken, { expiresIn });
           const options = {
-            maxAge: expiresIn,
-            httpOnly: true,
-            secure: true, // Set to true for HTTPS
-            sameSite: 'None', // Protect against CSRF
+            httpOnly: true, // ✅ Prevent  access from JavaScript (secure)
+            secure: true, // ❌ Remove for localhost
+            sameSite: 'None',
+            path: '/',
           };
           // Set session cookie
           res.cookie('session', sessionCookie, options);
           logger.log('Session cookie created and set');
+          console.log(req.cookies);
           res.status(200).send({ status: 'success' });
         } catch (error) {
           logger.error('Error creating session cookie:', error);
@@ -121,16 +123,46 @@ exports.clearCookies = https.onRequest((req, res) => {
   corsMiddleware(req, res, async () => {
     try {
       res.clearCookie('session', {
-        path: '/', // Match the path where the cookie was set
-        secure: true, // Secure in production
-        httpOnly: true, // Match HttpOnly setting
-        sameSite: 'None', // Match SameSite attribute
+        httpOnly: true,
+        secure: true, // Keep false for localhost
+        sameSite: 'None',
+        path: '/',
       });
+      res.clearCookie('csrfToken', {
+        httpOnly: true,
+        secure: true, // Keep false for localhost
+        sameSite: 'None',
+      });
+      res.status(200).send('Cookies cleared');
       logger.log('Session cookie cleared');
-      res.redirect('/signin');
     } catch (error) {
       logger.error('Error clearing cookies:', error);
       res.status(500).send('Internal Server Error');
+    }
+  });
+});
+
+exports.verifyCookie = https.onRequest((req, res) => {
+  corsMiddleware(req, res, async () => {
+    try {
+      const sessionCookie = req.cookies.session || '';
+      if (!sessionCookie) {
+        return res.status(401).send('Unauthorized');
+      }
+      admin
+        .auth()
+        .verifySessionCookie(sessionCookie, true)
+        .then((decodedClaims) => {
+          res.status(200).send({ status: 'Authorized', claims: decodedClaims });
+        })
+        .catch((error) => {
+          logger.error('Error verifying cookie:', error);
+          res.status(401).send('Unauthorized');
+        });
+      res.status(200).send('Authorized');
+    } catch (error) {
+      logger.error('Error verifying cookie:', error);
+      res.redirect('/signin/');
     }
   });
 });

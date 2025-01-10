@@ -24,9 +24,9 @@ import { clearCookies } from '@/libs/services/cookies/cookieFunctions';
 const SideMenu = ({ user }) => {
   const router = useRouter();
 
-  const handleSignOutUser = () => {
-    clearCookies();
-    signOut(auth);
+  const handleSignOutUser = async () => {
+    await signOut(auth);
+    await clearCookies();
   };
 
   const renderLogo = () => {

@@ -6,8 +6,8 @@ admin.initializeApp();
 const userController = require('./controllers/userController');
 const marvelAIController = require('./controllers/marvelAIController');
 const googleController = require('./controllers/googleController');
-const { seedDatabase } = require('./cloud_db_seed');
 const cookieController = require('./controllers/cookieController');
+const { seedDatabase } = require('./cloud_db_seed');
 
 seedDatabase();
 
@@ -23,6 +23,7 @@ module.exports = {
   sessionLogin: cookieController.sessionLogin,
   generateCSRF: cookieController.generateCSRF,
   clearCookies: cookieController.clearCookies,
+  verifyCookie: cookieController.verifyCookie,
   /* Marvel AI */
   chat: marvelAIController.chat,
   createChatSession: marvelAIController.createChatSession,

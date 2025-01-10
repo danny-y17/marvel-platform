@@ -5,8 +5,9 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useRouter } from 'next/router';
 import { GoogleAnalytics } from 'nextjs-google-analytics';
 
-import firebaseConfig from '@/libs/firebase/config';
+import { GoogleReCaptchaProvider } from 'react-google-recaptcha-v3';
 
+import firebaseConfig from '@/libs/firebase/config';
 import GlobalProvider from '@/libs/providers/GlobalProvider';
 import theme from '@/libs/theme/theme';
 
@@ -18,17 +19,17 @@ const App = ({ Component, pageProps }) => {
 
   return (
     <ThemeProvider theme={theme}>
-      <script
-        src="https://www.google.com/recaptcha/api.js?render=6LeZKKAqAAAAADwZ_IabXVbkbO5qxh7R8AzMVvRd"
-        async
-      />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <GlobalProvider>
-          <GoogleAnalytics
-            trackPageViews
-            gaMeasurementId={firebaseConfig.measurementId}
-          />
-          {getLayout(<Component {...pageProps} />, query)}
+          <GoogleReCaptchaProvider
+            reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? ''}
+          >
+            <GoogleAnalytics
+              trackPageViews
+              gaMeasurementId={firebaseConfig.measurementId}
+            />
+            {getLayout(<Component {...pageProps} />, query)}
+          </GoogleReCaptchaProvider>
         </GlobalProvider>
       </LocalizationProvider>
     </ThemeProvider>

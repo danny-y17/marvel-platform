@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useState } from 'react';
 
 import { onAuthStateChanged } from 'firebase/auth';
-import { Provider, useDispatch, useSelector } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 
 import SnackBar from '@/components/SnackBar';
 

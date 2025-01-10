@@ -1,75 +1,65 @@
-import axios from 'axios';
+import { kaiAPI } from '@/libs/utils/apiClient'; // ✅ Import the Axios instance
 
 // Function to generate CSRF token
 export const generateCSRF = async () => {
   try {
-    const csrfURL =
-      'http://127.0.0.1:5001/marvelai-c7b53/us-central1/generateCSRF';
-    const response = await axios.get(csrfURL, {
-      withCredentials: true, // Ensure cookies are included
-    });
+    const response = await kaiAPI.get('generateCSRF'); // ✅ Shortened endpoint
     return response.data.csrfToken;
   } catch (error) {
-    console.error(
-      'Error generating CSRF token:',
-      error.response?.data || error.message
+    throw new Error(
+      `Error generating CSRF token: ${error.response?.data || error.message}`
     );
-    throw error;
   }
 };
 
 // Function to perform session login
 export const sessionLogin = async (idToken, csrfToken) => {
-  const url = 'http://127.0.0.1:5001/marvelai-c7b53/us-central1/sessionLogin';
   try {
-    const response = await axios.post(
-      url,
-      {
-        idToken,
-        csrfToken,
-      },
-      {
-        withCredentials: true, // Ensure cookies are included
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error(
-      'Error in session login:',
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
-
-// Combined function (if needed)
-export const setCookies = async (idToken) => {
-  try {
-    const csrfToken = await generateCSRF(); // Generate CSRF token if not present
-    // Step 2: Perform session login
-    await sessionLogin(idToken, csrfToken);
-  } catch (error) {
-    console.error(
-      'Error setting cookies:',
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
-
-// clear session cookies
-export const clearCookies = async () => {
-  try {
-    const url = 'http://127.0.0.1:5001/marvelai-c7b53/us-central1/clearCookies';
-    const response = await axios.get(url, {
-      withCredentials: true,
+    const response = await kaiAPI.post('sessionLogin', {
+      idToken,
+      csrfToken,
     });
     return response.data;
   } catch (error) {
-    console.error(
-      'Error clearing cookies:',
-      error.response?.data || error.message
+    throw new Error(
+      `Error in session login: ${error.response?.data || error.message}`
     );
-    throw error;
+  }
+};
+
+// Combined function
+export const setCookies = async (idToken) => {
+  try {
+    const csrfToken = await generateCSRF();
+    const res = await sessionLogin(idToken, csrfToken);
+    return res;
+  } catch (error) {
+    throw new Error(
+      `Error setting cookies: ${error.response?.data || error.message}`
+    );
+  }
+};
+
+// Clear session cookies (different Firebase project)
+export const clearCookies = async () => {
+  try {
+    const response = await kaiAPI.get('clearCookies'); // Uses kaiAPI instance
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      `Error clearing cookies: ${error.response?.data || error.message}`
+    );
+  }
+};
+
+// verify cookies for route protection
+export const verifyCookies = async () => {
+  try {
+    const response = await kaiAPI.get('verifyCookies'); // Uses kaiAPI instance
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      `Error verifying cookies: ${error.response?.data || error.message}`
+    );
   }
 };

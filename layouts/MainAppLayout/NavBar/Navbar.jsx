@@ -59,7 +59,6 @@ const NavBar = () => {
    * @returns {void}
    */
   const handleSignOutUser = () => {
-    clearCookies();
     signOut(auth);
   };
 

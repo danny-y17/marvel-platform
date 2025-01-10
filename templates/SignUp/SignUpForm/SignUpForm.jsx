@@ -14,20 +14,16 @@ import styles from './styles';
 
 import sharedStyles from '@/styles/shared/sharedStyles';
 
-import {
-  AUTH_ERROR_MESSAGES,
-  AUTH_STEPS,
-  VALIDATION_STATES,
-} from '@/libs/constants/auth';
+import { AUTH_STEPS, VALIDATION_STATES } from '@/libs/constants/auth';
 
 import ALERT_COLORS from '@/libs/constants/notification';
-import ROUTES from '@/libs/constants/routes';
+
 import useWatchFields from '@/libs/hooks/useWatchFields';
 import { AuthContext } from '@/libs/providers/GlobalProvider';
 import { firestore } from '@/libs/redux/store';
-import fetchUserData from '@/libs/redux/thunks/user';
 import AUTH_REGEX from '@/libs/regex/auth';
-import { googleSignIn } from '@/libs/services/google/googleAuth';
+import { executeAndVerifyRecaptcha } from '@/libs/services/GoogleServices/captchaVerify';
+import { handleGoogleSignIn } from '@/libs/services/GoogleServices/googleAuth';
 import { signUp } from '@/libs/services/user/signUp';
 import { validatePassword } from '@/libs/utils/AuthUtils';
 
@@ -100,6 +96,7 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
     if (step === AUTH_STEPS.EMAIL) {
       // Ensure fullName and email are valid
       if (fullName.valid && email.valid) {
+        executeAndVerifyRecaptcha('signup');
         setStep(AUTH_STEPS.PASSWORD);
         return;
       }
@@ -138,40 +135,6 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
       } finally {
         setLoading(false);
       }
-    }
-  };
-
-  /**
-   * Google Sign-In flow (bypasses the form).
-   */
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      const userCred = await googleSignIn();
-      dispatch(setLoading(true));
-      const userData = await dispatch(
-        fetchUserData({ firestore, id: userCred.user.uid })
-      ).unwrap();
-      dispatch(setLoading(false));
-
-      router.replace(userData?.needsBoarding ? ROUTES.ONBOARDING : ROUTES.HOME);
-    } catch (err) {
-      const { code, message } = err || {};
-      setError((prev) => ({
-        ...prev,
-        password: {
-          message:
-            AUTH_ERROR_MESSAGES[code] || message || 'Google sign-in failed',
-        },
-      }));
-      handleOpenSnackBar(
-        ALERT_COLORS.ERROR,
-        AUTH_ERROR_MESSAGES[code] ||
-          message ||
-          'Google sign-in failed. Please try again.'
-      );
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
@@ -277,7 +240,15 @@ const SignUpForm = ({ step, setStep, setEmail, handleSwitch }) => {
   const renderGoogleSignInButton = () => (
     <GradientOutlinedButton
       bgcolor={theme.palette.Dark_Colors.Dark[1]}
-      onClick={handleGoogleSignIn}
+      onClick={() =>
+        handleGoogleSignIn(
+          dispatch,
+          router,
+          handleOpenSnackBar,
+          firestore,
+          setGoogleLoading
+        )
+      }
       text={googleLoading ? 'Signing up...' : 'Sign Up Via Google'}
       textColor={theme.palette.Common.White['100p']}
       loading={googleLoading}
